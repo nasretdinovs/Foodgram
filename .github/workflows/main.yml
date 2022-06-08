@@ -27,4 +27,4 @@ jobs:
         
     - name: Test with pytest
       run: |
-        pytest --exclude */migrations/*
+        pytest --exclude ./backend/recipes/migrations/,./backend/users/migrations/
