@@ -1,14 +1,16 @@
 from datetime import datetime as dt
+
 from django.contrib.auth import get_user_model
 from django.db.models import F, Sum
 from django.http.response import HttpResponse
-
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.status import HTTP_400_BAD_REQUEST
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 
 from recipes.models import Ingredient, IngredientAmount, Recipe, Tag
+
+from .filters import IngredientFilter, TagAuthorFilter
 from .mixins import AddRemoveMixin
 from .paginators import CustomPageNumberPagination
 from .permissions import AdminOrReadOnly, AuthorOrReadOnly
@@ -28,58 +30,17 @@ class IngredientViewSet(ReadOnlyModelViewSet):
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
     permission_classes = (AdminOrReadOnly,)
-
-    def get_queryset(self):
-        name = self.request.query_params.get('name')
-        queryset = self.queryset
-        if name:
-            name = name.lower()
-            stw_queryset = list(queryset.filter(name__startswith=name))
-            cnt_queryset = queryset.filter(name__contains=name)
-            stw_queryset.extend(
-                [i for i in cnt_queryset if i not in stw_queryset]
-            )
-            queryset = stw_queryset
-        return queryset
+    filter_backends = (IngredientFilter,)
+    search_fields = ('^name',)
 
 
 class RecipeViewSet(ModelViewSet, AddRemoveMixin):
-    queryset = Recipe.objects.select_related('author')
+    queryset = Recipe.objects.all()
     serializer_class = RecipeSerializer
     extra_serializer = LiteRecipeSerializer
     pagination_class = CustomPageNumberPagination
+    filter_class = TagAuthorFilter
     permission_classes = (AuthorOrReadOnly,)
-
-    def get_queryset(self):
-        queryset = self.queryset
-
-        tags = self.request.query_params.getlist('tags')
-        if tags:
-            queryset = queryset.filter(
-                tags__slug__in=tags).distinct()
-
-        author = self.request.query_params.get('author')
-        if author:
-            queryset = queryset.filter(author=author)
-
-        # Для авторизованных пользователей:
-        user = self.request.user
-        if user.is_anonymous:
-            return queryset
-
-        is_in_shopping = self.request.query_params.get('is_in_shopping_cart')
-        if is_in_shopping in ('1', 'true',):
-            queryset = queryset.filter(cart=user.id)
-        elif is_in_shopping in ('0', 'false',):
-            queryset = queryset.exclude(cart=user.id)
-
-        is_favorited = self.request.query_params.get('is_favorited')
-        if is_favorited in ('1', 'true',):
-            queryset = queryset.filter(favorite=user.id)
-        if is_favorited in ('0', 'false',):
-            queryset = queryset.exclude(favorite=user.id)
-
-        return queryset
 
     @action(methods=['GET', 'POST', 'DELETE'], detail=True)
     def favorite(self, request, pk):

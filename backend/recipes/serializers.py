@@ -1,12 +1,12 @@
 from django.contrib.auth import get_user_model
 from django.db import models
-
+from django.shortcuts import get_object_or_404
 from drf_extra_fields.fields import Base64ImageField
 from rest_framework import serializers
 
 from users.serializers import CustomUserSerializer
+
 from .models import Ingredient, IngredientAmount, Recipe, Tag
-from .services import check_value
 
 User = get_user_model()
 
@@ -82,11 +82,10 @@ class RecipeSerializer(serializers.ModelSerializer):
         read_only_fields = ('is_favorite', 'is_shopping_cart', )
 
     def get_ingredients(self, obj):
-        ingredients = obj.ingredients.values(
+        return obj.ingredients.values(
             'id', 'name', 'measurement_unit',
             amount=models.F('recipe__amount')
         )
-        return ingredients
 
     def get_is_favorited(self, obj):
         user = self.context.get('request').user
@@ -101,36 +100,30 @@ class RecipeSerializer(serializers.ModelSerializer):
         return user.carts.filter(id=obj.id).exists()
 
     def validate(self, data):
-        name = str(self.initial_data.get('name')).strip()
-        tags = self.initial_data.get('tags')
         ingredients = self.initial_data.get('ingredients')
-        values_as_list = (tags, ingredients)
 
-        for value in values_as_list:
-            if not isinstance(value, list):
-                raise serializers.ValidationError(
-                    f'"{value}" должен быть в формате "[]"'
-                )
+        if not ingredients:
+            raise serializers.ValidationError({
+                'ingredients': 'Добавьте хотя бы один ингредиент'})
 
-        for tag in tags:
-            check_value(tag, Tag)
-
-        valid_ingredients = []
-        for ing in ingredients:
-            ing_id = ing.get('id')
-            ingredient = check_value(ing_id, Ingredient)
-
-            amount = ing.get('amount')
-            check_value(amount)
-
-            valid_ingredients.append(
-                {'ingredient': ingredient, 'amount': amount}
+        ingredient_list = []
+        for ingredient_item in ingredients:
+            ingredient = get_object_or_404(
+                Ingredient,
+                id=ingredient_item['id']
             )
+            if ingredient in ingredient_list:
+                raise serializers.ValidationError(
+                    'Ингредиенты не должны повторяться'
+                )
+            ingredient_list.append(ingredient)
+            if int(ingredient_item['amount']) < 0:
+                raise serializers.ValidationError({
+                    'ingredients': ('Количество ингредиента '
+                                    'должно быть больше 0')
+                })
 
-        data['name'] = name.capitalize()
-        data['tags'] = tags
-        data['ingredients'] = valid_ingredients
-        data['author'] = self.context.get('request').user
+        data['ingredients'] = ingredients
         return data
 
     def create(self, validated_data):
