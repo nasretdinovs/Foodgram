@@ -1,6 +1,5 @@
 from django.contrib.auth import get_user_model
 from django.db import models
-from django.shortcuts import get_object_or_404
 from drf_extra_fields.fields import Base64ImageField
 from rest_framework import serializers
 
@@ -99,31 +98,65 @@ class RecipeSerializer(serializers.ModelSerializer):
             return False
         return user.carts.filter(id=obj.id).exists()
 
-    def validate(self, data):
-        ingredients = self.initial_data.get('ingredients')
-
-        if not ingredients:
-            raise serializers.ValidationError({
-                'ingredients': 'Добавьте хотя бы один ингредиент'})
-
-        ingredient_list = []
-        for ingredient_item in ingredients:
-            ingredient = get_object_or_404(
-                Ingredient,
-                id=ingredient_item['id']
+    def create_ingredients(self, ingredients, recipe):
+        for ingredient in ingredients:
+            IngredientAmount.objects.create(
+                recipe=recipe,
+                ingredients=ingredient['ingredient'],
+                amount=ingredient['amount']
             )
-            if ingredient in ingredient_list:
-                raise serializers.ValidationError(
-                    'Ингредиенты не должны повторяться'
-                )
-            ingredient_list.append(ingredient)
-            if int(ingredient_item['amount']) < 0:
-                raise serializers.ValidationError({
-                    'ingredients': ('Количество ингредиента '
-                                    'должно быть больше 0')
-                })
 
-        data['ingredients'] = ingredients
+    def validate(self, data):
+        name = str(self.initial_data.get('name')).strip()
+        tags = self.initial_data.get('tags')
+        ingredients = self.initial_data.get('ingredients')
+        values_list = (tags, ingredients)
+
+        for value in values_list:
+            if not isinstance(value, list):
+                raise serializers.ValidationError(
+                    f'"{value}" должен быть в формате "[]"'
+                )
+
+        for tag in tags:
+            if not str(tag).isdecimal():
+                raise serializers.ValidationError(
+                    f'{tag} должно состоять из цифр'
+                )
+
+            if not Tag.objects.filter(id=tag):
+                raise serializers.ValidationError(
+                    f'{tag} не существует'
+                )
+
+        valid_ingredients = []
+        for ingredient_item in ingredients:
+            ingredient_id = ingredient_item.get('id')
+            if not str(ingredient_id).isdecimal():
+                raise serializers.ValidationError(
+                    f'{ingredient_id} должно состоять из цифр'
+                )
+
+            if not Ingredient.objects.filter(id=ingredient_id):
+                raise serializers.ValidationError(
+                    f'{ingredient_id} не существует'
+                )
+            ingredient = Ingredient.objects.filter(id=ingredient_id)[0]
+
+            amount = ingredient_item.get('amount')
+            if not str(amount).isdecimal():
+                raise serializers.ValidationError(
+                    f'{amount} должно состоять из цифр'
+                )
+
+            valid_ingredients.append(
+                {'ingredient': ingredient, 'amount': amount}
+            )
+
+        data['name'] = name.capitalize()
+        data['tags'] = tags
+        data['ingredients'] = valid_ingredients
+        data['author'] = self.context.get('request').user
         return data
 
     def create(self, validated_data):
@@ -132,12 +165,7 @@ class RecipeSerializer(serializers.ModelSerializer):
         ingredients = validated_data.pop('ingredients')
         recipe = Recipe.objects.create(image=image, **validated_data)
         recipe.tags.set(tags)
-        for ingredient in ingredients:
-            IngredientAmount.objects.get_or_create(
-                recipe=recipe,
-                ingredients=ingredient['ingredient'],
-                amount=ingredient['amount']
-            )
+        self.create_ingredients(ingredients, recipe)
         return recipe
 
     def update(self, recipe, validated_data):
@@ -159,12 +187,7 @@ class RecipeSerializer(serializers.ModelSerializer):
 
         if ingredients:
             recipe.ingredients.clear()
-            for ingredient in ingredients:
-                IngredientAmount.objects.get_or_create(
-                    recipe=recipe,
-                    ingredients=ingredient['ingredient'],
-                    amount=ingredient['amount']
-                )
+            self.create_ingredients(ingredients, recipe)
 
         recipe.save()
         return recipe
