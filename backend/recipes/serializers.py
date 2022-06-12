@@ -4,7 +4,6 @@ from drf_extra_fields.fields import Base64ImageField
 from rest_framework import serializers
 
 from users.serializers import CustomUserSerializer
-
 from .models import Ingredient, IngredientAmount, Recipe, Tag
 
 User = get_user_model()
@@ -33,7 +32,10 @@ class IngredientSerializer(serializers.ModelSerializer):
 
 class SubscribeSerializer(CustomUserSerializer):
     recipes = LiteRecipeSerializer(many=True, read_only=True)
-    recipes_count = serializers.SerializerMethodField()
+    recipes_count = serializers.IntegerField(
+        source='recipes.count',
+        read_only=True
+    )
 
     class Meta:
         model = User
@@ -51,9 +53,6 @@ class SubscribeSerializer(CustomUserSerializer):
 
     def get_is_subscribed(*args):
         return True
-
-    def get_recipes_count(self, obj):
-        return obj.recipes.count()
 
 
 class RecipeSerializer(serializers.ModelSerializer):
@@ -99,12 +98,12 @@ class RecipeSerializer(serializers.ModelSerializer):
         return user.carts.filter(id=obj.id).exists()
 
     def create_ingredients(self, ingredients, recipe):
-        for ingredient in ingredients:
-            IngredientAmount.objects.create(
-                recipe=recipe,
-                ingredients=ingredient['ingredient'],
-                amount=ingredient['amount']
-            )
+        objs = (IngredientAmount(
+            recipe=recipe,
+            ingredients=ingredient['ingredient'],
+            amount=ingredient['amount']
+        ) for ingredient in ingredients)
+        IngredientAmount.objects.bulk_create(objs)
 
     def validate(self, data):
         name = str(self.initial_data.get('name')).strip()
