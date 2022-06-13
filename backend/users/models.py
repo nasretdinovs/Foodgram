@@ -54,3 +54,10 @@ class User(AbstractUser):
 
     def __str__(self):
         return f'{self.get_full_name()}: {self.email}'
+
+
+class Subscribe(User):
+    class Meta:
+        proxy = True
+        verbose_name = 'подписка'
+        verbose_name_plural = 'подписки'

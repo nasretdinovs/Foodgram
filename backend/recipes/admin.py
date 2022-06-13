@@ -39,9 +39,15 @@ class RecipeAdmin(admin.ModelAdmin):
     list_display = (
         'name',
         'author',
+        'get_favor_count'
     )
+    inlines = (IngredientInline,)
     filter_horizontal = ('tags',)
-    search_fields = ('author',)
+    search_fields = ('name', 'author', 'tags',)
     list_filter = ('author', 'name', 'tags')
     ordering = ('author', 'pub_date',)
     empty_value_display = '-'
+
+    def get_favor_count(self, obj):
+        return obj.favorite.count()
+    get_favor_count.short_description = 'в избранном'
