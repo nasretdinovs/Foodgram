@@ -40,13 +40,23 @@ jobs:
         passphrase: ${{ secrets.PASSPHRASE }}
         script: |
           sudo rm -rf foodgram/
-          mkdir -p foodgram/
+          mkdir -p foodgram/docs
 
-    - name: Copy files
+    - name: Copy docker-compose.yml and nginx.conf
       uses: garygrossgarten/github-action-scp@release
       with:
           local: infra/
           remote: /home/${{ secrets.USER }}/foodgram/
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USER }}
+          privateKey: ${{ secrets.SSH_KEY }}
+          passphrase: ${{ secrets.PASSPHRASE }}
+
+    - name: Copy docs
+      uses: garygrossgarten/github-action-scp@release
+      with:
+          local: docs/
+          remote: /home/${{ secrets.USER }}/foodgram/docs/
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USER }}
           privateKey: ${{ secrets.SSH_KEY }}
