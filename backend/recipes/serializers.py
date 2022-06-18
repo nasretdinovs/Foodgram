@@ -131,9 +131,10 @@ class RecipeSerializer(serializers.ModelSerializer):
         valid_ingredients = []
         for ingredient_item in ingredients:
             ingredient_id = ingredient_item.get('id')
-            if not str(ingredient_id).isdecimal():
+            if not str(ingredient_id).isdecimal() or str(ingredient_id) == '0':
                 raise serializers.ValidationError(
-                    f'{ingredient_id} должно состоять из цифр'
+                    f'Убедитесь, что значение {ingredient_id} '
+                    f'является числом больше 0'
                 )
 
             if not Ingredient.objects.filter(id=ingredient_id):
@@ -143,9 +144,10 @@ class RecipeSerializer(serializers.ModelSerializer):
             ingredient = Ingredient.objects.filter(id=ingredient_id)[0]
 
             amount = ingredient_item.get('amount')
-            if not str(amount).isdecimal():
+            if not str(amount).isdecimal() or str(amount) == '0':
                 raise serializers.ValidationError(
-                    f'{amount} должно состоять из цифр'
+                    f'Убедитесь, что значение {amount} '
+                    f'является числом больше 0'
                 )
 
             valid_ingredients.append(
