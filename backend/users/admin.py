@@ -5,6 +5,7 @@ from .models import Subscribe, User
 
 @register(User)
 class UserAdmin(ModelAdmin):
+    """Админка пользователей."""
     list_display = (
         'username',
         'email',
@@ -19,6 +20,7 @@ class UserAdmin(ModelAdmin):
 
 @register(Subscribe)
 class SubscribeAdmin(UserAdmin):
+    """Админка подписок."""
     list_display = (
         'username',
         'get_subscribe',

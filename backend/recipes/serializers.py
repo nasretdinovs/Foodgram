@@ -10,6 +10,7 @@ User = get_user_model()
 
 
 class LiteRecipeSerializer(serializers.ModelSerializer):
+    """Сериализатор для модели рецептов. С меньшим количеством полей."""
     class Meta:
         model = Recipe
         fields = ('id', 'name', 'image', 'cooking_time')
@@ -17,6 +18,7 @@ class LiteRecipeSerializer(serializers.ModelSerializer):
 
 
 class TagSerializer(serializers.ModelSerializer):
+    """Сериализатор для модели тэгов."""
     class Meta:
         model = Tag
         fields = ('id', 'name', 'color', 'slug')
@@ -24,6 +26,7 @@ class TagSerializer(serializers.ModelSerializer):
 
 
 class IngredientSerializer(serializers.ModelSerializer):
+    """Сериализатор для модели ингредиентов."""
     class Meta:
         model = Ingredient
         fields = ('id', 'name', 'measurement_unit')
@@ -31,6 +34,7 @@ class IngredientSerializer(serializers.ModelSerializer):
 
 
 class SubscribeSerializer(CustomUserSerializer):
+    """Сериализатор для подписки."""
     recipes = LiteRecipeSerializer(many=True, read_only=True)
     recipes_count = serializers.IntegerField(
         source='recipes.count',
@@ -56,6 +60,7 @@ class SubscribeSerializer(CustomUserSerializer):
 
 
 class RecipeSerializer(serializers.ModelSerializer):
+    """Сериализатор для модели рецептов."""
     tags = TagSerializer(many=True, read_only=True)
     author = CustomUserSerializer(read_only=True)
     ingredients = serializers.SerializerMethodField()
@@ -80,24 +85,28 @@ class RecipeSerializer(serializers.ModelSerializer):
         read_only_fields = ('is_favorite', 'is_shopping_cart', )
 
     def get_ingredients(self, obj):
+        """Получение списка ингредиентов."""
         return obj.ingredients.values(
             'id', 'name', 'measurement_unit',
             amount=models.F('recipe__amount')
         )
 
     def get_is_favorited(self, obj):
+        """Проверка на наличие рецепта в избранном."""
         user = self.context.get('request').user
         if user.is_anonymous:
             return False
         return user.favorites.filter(id=obj.id).exists()
 
     def get_is_in_shopping_cart(self, obj):
+        """Проверка на наличие рецепта в списке покупок."""
         user = self.context.get('request').user
         if user.is_anonymous:
             return False
         return user.carts.filter(id=obj.id).exists()
 
     def create_ingredients(self, ingredients, recipe):
+        """Создание количества ингредиентов."""
         objs = (IngredientAmount(
             recipe=recipe,
             ingredients=ingredient['ingredient'],
@@ -106,6 +115,7 @@ class RecipeSerializer(serializers.ModelSerializer):
         IngredientAmount.objects.bulk_create(objs)
 
     def validate(self, data):
+        """Проверка данных."""
         name = str(self.initial_data.get('name')).strip()
         tags = self.initial_data.get('tags')
         ingredients = self.initial_data.get('ingredients')
@@ -161,6 +171,7 @@ class RecipeSerializer(serializers.ModelSerializer):
         return data
 
     def create(self, validated_data):
+        """Создание рецепта."""
         image = validated_data.pop('image')
         tags = validated_data.pop('tags')
         ingredients = validated_data.pop('ingredients')
@@ -170,6 +181,7 @@ class RecipeSerializer(serializers.ModelSerializer):
         return recipe
 
     def update(self, recipe, validated_data):
+        """Обновление рецепта."""
         tags = validated_data.get('tags')
         ingredients = validated_data.get('ingredients')
 

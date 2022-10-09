@@ -7,6 +7,8 @@ User = get_user_model()
 
 
 class CustomUserSerializer(UserSerializer):
+    """Сериализатор для вывода пользователей, на которых
+    подписан текущий пользователь."""
     is_subscribed = serializers.SerializerMethodField()
 
     class Meta:
@@ -31,6 +33,8 @@ class CustomUserSerializer(UserSerializer):
 
 
 class CustomUserCreateSerializer(UserCreateSerializer):
+    """Сериализатор для создания пользователей."""
+
     email = serializers.EmailField(
         validators=[UniqueValidator(queryset=User.objects.all())]
     )

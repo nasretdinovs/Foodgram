@@ -20,12 +20,14 @@ User = get_user_model()
 
 
 class TagViewSet(ReadOnlyModelViewSet):
+    """Изменение и создание тэгов."""
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
     permission_classes = (AdminOrReadOnly,)
 
 
 class IngredientViewSet(ReadOnlyModelViewSet):
+    """Изменение и создание ингредиентов."""
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
     permission_classes = (AdminOrReadOnly,)
@@ -34,6 +36,7 @@ class IngredientViewSet(ReadOnlyModelViewSet):
 
 
 class RecipeViewSet(ModelViewSet, AddRemoveMixin):
+    """Изменение и создание рецептов."""
     queryset = Recipe.objects.all()
     serializer_class = RecipeSerializer
     extra_serializer = LiteRecipeSerializer
@@ -43,14 +46,17 @@ class RecipeViewSet(ModelViewSet, AddRemoveMixin):
 
     @action(methods=['GET', 'POST', 'DELETE'], detail=True)
     def favorite(self, request, pk):
+        """Добавление или удаление рецепта из избранного."""
         return self.add_remove_obj(pk, 'favorite')
 
     @action(methods=['GET', 'POST', 'DELETE'], detail=True)
     def shopping_cart(self, request, pk):
+        """Добавление или удаление рецепта из списка покупок."""
         return self.add_remove_obj(pk, 'shopping_cart')
 
     @action(methods=['GET'], detail=False)
     def download_shopping_cart(self, request):
+        """Создание и скачивание списка покупок в формате *.TXT"""
         user = self.request.user
         if not user.carts.exists():
             return Response(status=HTTP_400_BAD_REQUEST)

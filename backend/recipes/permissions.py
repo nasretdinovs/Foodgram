@@ -2,6 +2,7 @@ from rest_framework import permissions
 
 
 class AuthorOrReadOnly(permissions.IsAuthenticatedOrReadOnly):
+    """Доступ автору, остальным только чтение."""
     def has_object_permission(self, request, view, obj):
         return (
             request.method in ('GET',)
@@ -11,6 +12,7 @@ class AuthorOrReadOnly(permissions.IsAuthenticatedOrReadOnly):
 
 
 class AdminOrReadOnly(permissions.BasePermission):
+    """Доступ администратору, остальным только чтение."""
     def has_permission(self, request, view):
         return (
             request.method in ('GET',)
@@ -20,6 +22,7 @@ class AdminOrReadOnly(permissions.BasePermission):
 
 
 class OwnerUserOrReadOnly(permissions.IsAuthenticatedOrReadOnly):
+    """Доступ администратору и автору, остальным только чтение."""
     def has_object_permission(self, request, view, obj):
         return (
             request.method in ('GET',)
@@ -29,6 +32,7 @@ class OwnerUserOrReadOnly(permissions.IsAuthenticatedOrReadOnly):
 
 
 class OwnerUser(permissions.IsAuthenticated):
+    """Доступ только автору."""
     def has_object_permission(self, request, view, obj):
         return (
             request.method in ('GET',)

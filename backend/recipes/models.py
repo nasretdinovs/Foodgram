@@ -9,6 +9,7 @@ User = get_user_model()
 
 
 class Tag(models.Model):
+    """Модель тэгов рецептов."""
     name = models.CharField(
         max_length=200,
         unique=True,
@@ -51,6 +52,7 @@ class Tag(models.Model):
 
 
 class Ingredient(models.Model):
+    """Модель ингредиентов."""
     name = models.CharField(
         verbose_name='ингредиент',
         max_length=200,
@@ -84,6 +86,7 @@ class Ingredient(models.Model):
 
 
 class Recipe(models.Model):
+    """Модель рецептов."""
     tags = models.ManyToManyField(
         Tag,
         verbose_name='тег',
@@ -151,6 +154,7 @@ class Recipe(models.Model):
 
 
 class IngredientAmount(models.Model):
+    """Модель количества ингредиентов."""
     recipe = models.ForeignKey(
         Recipe,
         verbose_name='из рецепта',

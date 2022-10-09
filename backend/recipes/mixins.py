@@ -5,9 +5,11 @@ from rest_framework.status import (HTTP_201_CREATED, HTTP_204_NO_CONTENT,
 
 
 class AddRemoveMixin:
+    """Добавление доп. функций во вьюсет."""
     extra_serializer = None
 
     def add_remove_obj(self, obj_id, our_field):
+        """Добавляет или удаляет зависимость many-to-many."""
         user = self.request.user
         if user.is_anonymous:
             return Response(status=HTTP_401_UNAUTHORIZED)

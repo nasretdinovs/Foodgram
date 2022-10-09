@@ -3,6 +3,7 @@ from django.db import models
 
 
 class User(AbstractUser):
+    """Модель для пользователей."""
 
     email = models.EmailField(
         max_length=254,
@@ -57,6 +58,7 @@ class User(AbstractUser):
 
 
 class Subscribe(User):
+    """Модель прокси для отображения подписок в админке."""
     class Meta:
         proxy = True
         verbose_name = 'подписка'

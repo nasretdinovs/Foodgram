@@ -12,15 +12,18 @@ User = get_user_model()
 
 
 class UserViewSet(DjoserUserViewSet, AddRemoveMixin):
+    """Изменение и создание пользователей."""
     pagination_class = CustomPageNumberPagination
     extra_serializer = SubscribeSerializer
 
     @action(methods=['GET', 'POST', 'DELETE'], detail=True)
     def subscribe(self, request, id):
+        """Добавляет или удаляет подписку."""
         return self.add_remove_obj(id, 'subscribe')
 
     @action(methods=['GET'], detail=False)
     def subscriptions(self, request):
+        """Выводит список подписок пользователя."""
         user = self.request.user
         if user.is_anonymous:
             return Response(status=HTTP_401_UNAUTHORIZED)
