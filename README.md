@@ -48,10 +48,5 @@ sudo docker compose exec backend python manage.py createsuperuser
 Проект разработан
 - [Виталий Насретдинов](https://github.com/nasretdinovs)
 
-## Адрес сервера:
-http://51.250.110.95/
-- Логин админки: admin
-- Пароль админки: Yandex2022
-
 ## License
 [MIT](https://choosealicense.com/licenses/mit/)
